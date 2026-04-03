@@ -26,9 +26,10 @@ class SecureFilesystemBackend(FilesystemBackend):
 
     def _normalize_path(self, path_str: str) -> str:
         """
-        LLMs sometimes pass paths with the root_dir prefix or a leading slash.
-        Normalize to a plain relative path before security checks and backend calls.
-        e.g. "/dummy_repo/src/api.py" -> "src/api.py" when root_dir="./dummy_repo"
+        LLMs sometimes pass paths with a leading slash, full workspace prefix,
+        or redundant root_dir prefix. Normalize to a plain relative path.
+        e.g. "/dummy_repo/src/api.py"              -> "src/api.py"
+             "github/workspace/dummy_repo/src/api.py" -> "src/api.py"
         """
         path = Path(path_str)
 
@@ -36,11 +37,17 @@ class SecureFilesystemBackend(FilesystemBackend):
         if path.is_absolute():
             path = Path(*path.parts[1:])
 
-        # Strip root_dir prefix if LLM redundantly included it
-        root_parts = [p for p in Path(self._root_dir).parts if p != "."]
-        if path.parts[:len(root_parts)] == tuple(root_parts):
-            remaining = path.parts[len(root_parts):]
-            path = Path(*remaining) if remaining else Path(".")
+        # Find root_dir parts (strip leading './' if present)
+        root_parts = tuple(p for p in Path(self._root_dir).parts if p != ".")
+
+        # Search for root_dir parts anywhere in the path and strip everything up to and including them
+        if root_parts:
+            parts = path.parts
+            for i in range(len(parts)):
+                if parts[i:i + len(root_parts)] == root_parts:
+                    remaining = parts[i + len(root_parts):]
+                    path = Path(*remaining) if remaining else Path(".")
+                    break
 
         return str(path)
 

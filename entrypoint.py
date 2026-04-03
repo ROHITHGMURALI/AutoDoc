@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 from autodoc_swarm.agent import create_swarm
 
 def get_changed_files(target_dir: str):
@@ -25,8 +26,18 @@ def get_changed_files(target_dir: str):
                 ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
                 capture_output=True, text=True, check=True
             )
+        SKIP_SUFFIXES = {
+            ".gitignore", ".dockerignore", ".npmignore", ".eslintignore",
+            ".prettierignore", ".hgignore", ".bzrignore",
+            ".gitattributes", ".editorconfig", ".gitmodules",
+        }
         files = result.stdout.splitlines()
-        return [f for f in files if f and not f.replace("\\", "/").startswith(doc_prefix)]
+        return [
+            f for f in files
+            if f
+            and not f.replace("\\", "/").startswith(doc_prefix)
+            and Path(f).name not in SKIP_SUFFIXES
+        ]
     except subprocess.CalledProcessError as e:
         print(f"Unable to determine changed files (possibly first commit). Proceeding with full scan. Detail: {e}")
         return []
