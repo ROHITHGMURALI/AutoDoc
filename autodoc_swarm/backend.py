@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Any
 
 from deepagents.backends import FilesystemBackend
 
@@ -42,7 +42,7 @@ class SecureFilesystemBackend(FilesystemBackend):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         return super().read(path, *args, **kwargs)
 
-    def write(self, path: str, content: str):
+    def write(self, path: str, content: str) -> Any:
         if not self._is_allowed(path):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         return super().write(path, content)
