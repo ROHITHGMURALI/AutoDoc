@@ -37,10 +37,10 @@ class SecureFilesystemBackend(FilesystemBackend):
 
         return True
 
-    def read(self, path: str) -> str:
+    def read(self, path: str, *args, **kwargs) -> str:
         if not self._is_allowed(path):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
-        return super().read(path)
+        return super().read(path, *args, **kwargs)
 
     def write(self, path: str, content: str) -> None:
         if not self._is_allowed(path):
