@@ -72,21 +72,138 @@ This project uses `uv` for lightning-fast dependency management.
    ```
    *Edit `.env` to include your `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, etc. Optional LangSmith tracing configurations are also included.*
 
-## Usage & Execution
+## Usage as a GitHub Action
 
-A Typer CLI is provided for interacting with the swarm.
+AutoDoc Swarm is published as a GitHub Action. Add it to any workflow to automatically generate and commit documentation whenever code changes.
+
+### Prerequisites
+
+1. **API key secret** — Add your LLM provider API key to your repository secrets:
+   `Settings → Secrets and variables → Actions → New repository secret`
+
+2. **Token with write access** — The action commits generated docs back to the branch. You can use either:
+   - A **Personal Access Token (PAT)** stored as a secret (e.g. `PAT_TOKEN`) — recommended so the commit triggers downstream workflows
+   - The built-in `secrets.GITHUB_TOKEN` — simpler, but commits made with it will not trigger further workflow runs
+
+3. **Workflow permissions** — The job must have `contents: write` permission.
+
+### Minimal Setup
+
+Create `.github/workflows/autodoc.yml` in your repository:
+
+```yaml
+name: AutoDoc
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  autodoc:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for smart diffing
+
+      - uses: ROHITHGMURALI/AutoDoc@main
+        with:
+          github_token: ${{ secrets.PAT_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          provider: openrouter
+          queen_model: anthropic/claude-3.5-sonnet
+          worker_model: anthropic/claude-3.5-sonnet
+          drone_model: anthropic/claude-3.5-sonnet
+          target_dir: ./
+```
+
+### All Inputs
+
+| Input | Required | Default | Description |
+|---|---|---|---|
+| `github_token` | Yes | — | Token used to commit and push generated docs back to the branch |
+| `api_key` | Yes | — | API key for the chosen LLM provider |
+| `provider` | Yes | `openrouter` | LLM provider: `openrouter`, `anthropic`, `openai`, or `google` |
+| `queen_model` | Yes | `anthropic/claude-3.5-sonnet` | Model for the Swarm Queen (orchestrator) |
+| `worker_model` | Yes | `anthropic/claude-3.5-sonnet` | Model for the Swarm Worker (writer) |
+| `drone_model` | Yes | `anthropic/claude-3.5-sonnet` | Model for the Swarm Drone (QA reviewer) |
+| `target_dir` | Yes | `.` | Directory within the repo to scan and document |
+
+### Provider & Model Examples
+
+**OpenRouter (cheapest for testing):**
+```yaml
+provider: openrouter
+queen_model: anthropic/claude-3.5-sonnet
+worker_model: qwen/qwen3.6-plus:free
+drone_model: qwen/qwen3.6-plus:free
+api_key: ${{ secrets.OPENROUTER_API_KEY }}
+```
+
+**Anthropic direct:**
+```yaml
+provider: anthropic
+queen_model: claude-opus-4-6
+worker_model: claude-sonnet-4-6
+drone_model: claude-haiku-4-5-20251001
+api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+**OpenAI:**
+```yaml
+provider: openai
+queen_model: gpt-4o
+worker_model: gpt-4o-mini
+drone_model: gpt-4o-mini
+api_key: ${{ secrets.OPENAI_API_KEY }}
+```
+
+**Google:**
+```yaml
+provider: google
+queen_model: gemini-2.0-flash
+worker_model: gemini-2.0-flash
+drone_model: gemini-2.0-flash
+api_key: ${{ secrets.GOOGLE_API_KEY }}
+```
+
+### How It Works
+
+1. On every push the action checks which files changed (smart diffing via `git diff`).
+2. The Swarm Queen scans the `target_dir`, evaluates documentation freshness, and builds a task list.
+3. The Swarm Worker generates Markdown documentation with PlantUML diagrams for each file.
+4. The Swarm Drone reviews each doc and returns `PASS` or `FAIL` with feedback. Failed docs are retried up to 3 times.
+5. All generated docs are committed back to the same branch under `<target_dir>/documentation/`, mirroring the source tree structure.
+
+### Output Structure
+
+Given a `target_dir` of `./src`, generated docs appear at:
+```
+src/
+├── api/
+│   └── routes.py
+documentation/
+└── src/
+    └── api/
+        └── routes.md
+```
+
+---
+
+## Local CLI Usage
+
+A Typer CLI is also provided for running the swarm locally.
 
 ### Basic Execution
-
-Run the swarm on a specific target directory:
 
 ```bash
 uv run python run_swarm.py --target ./src
 ```
 
 ### Advanced Execution
-
-Specify a different LLM provider and assign specific models to the Queen, Worker, and Drone agents:
 
 ```bash
 uv run python run_swarm.py \
@@ -95,12 +212,6 @@ uv run python run_swarm.py \
     --queen-model gpt-4o \
     --worker-model gpt-4o-mini \
     --drone-model gpt-4o-mini
-```
-
-Force an update of all documentation, overriding the modification time freshness checks:
-
-```bash
-uv run python run_swarm.py --target ./src --force-update
 ```
 
 ## Development & Testing
