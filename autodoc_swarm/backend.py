@@ -47,7 +47,7 @@ class SecureFilesystemBackend(FilesystemBackend):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         return super().write(path, content)
 
-    def ls_info(self, path: str = ".") -> List[dict]:
+    def ls_info(self, path: str = ".") -> list[dict]:
         try:
             result = super().ls_info(path)
             allowed_items = []

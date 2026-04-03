@@ -13,16 +13,18 @@ def create_swarm(target_dir: str, provider: str, queen_model: str, worker_model:
 
     backend = SecureFilesystemBackend(root_dir=target_dir)
 
+    worker_desc = "Technical Writer subagent that reads source code and generates documentation."
     worker = SubAgent(
         name="worker",
-        description="Technical Writer subagent that reads source code and generates documentation.",
+        description=worker_desc,
         system_prompt=WORKER_SYSTEM_PROMPT,
         model=llm_worker,
     )
 
+    drone_desc = "Devil's Advocate / QA subagent that critiques documentation and validates requirements."
     drone = SubAgent(
         name="drone",
-        description="Devil's Advocate / QA subagent that critiques documentation and validates requirements.",
+        description=drone_desc,
         system_prompt=DRONE_SYSTEM_PROMPT,
         model=llm_drone,
     )

@@ -8,6 +8,10 @@ def get_changed_files():
     Returns a list of files changed in the current PR or commit.
     Used for smart diffing to save LLM context window/costs.
     """
+    workspace = os.environ.get("GITHUB_WORKSPACE")
+    if workspace:
+        subprocess.run(["git", "config", "--global", "--add", "safe.directory", workspace], check=True)
+
     event_name = os.environ.get("GITHUB_EVENT_NAME")
     try:
         if event_name == "pull_request":
@@ -40,7 +44,10 @@ def configure_git():
 
 def commit_and_push(target_dir):
     try:
-        subprocess.run(["git", "add", os.path.join(target_dir, "documentation/")], check=True)
+        doc_dir = os.path.join(target_dir, "documentation/")
+        if not os.path.exists(doc_dir):
+            os.makedirs(doc_dir, exist_ok=True)
+        subprocess.run(["git", "add", doc_dir], check=True)
         # Check if there are changes to commit
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if "documentation/" not in status.stdout:
@@ -115,7 +122,7 @@ def main():
 
         response = queen.invoke({"messages": [("user", kickoff_msg)]})
         try:
-            if isinstance(response, dict) and "messages" in response:
+            if isinstance(response, dict) and response.get("messages"):
                 final_output = response["messages"][-1].content
             else:
                 final_output = str(response)

@@ -41,7 +41,7 @@ def run(
         response = queen.invoke({"messages": [("user", "Begin a deep scan of the repository. Evaluate freshness of files and document all code files found according to your directives. Stop when all tasks are complete.")]})
 
         try:
-            if isinstance(response, dict) and "messages" in response:
+            if isinstance(response, dict) and response.get("messages"):
                 final_output = response["messages"][-1].content
             else:
                 final_output = str(response)
