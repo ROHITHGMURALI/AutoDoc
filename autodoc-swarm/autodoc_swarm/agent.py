@@ -6,15 +6,18 @@ from .backend import SecureFilesystemBackend
 from .tools import check_file_freshness
 from .llm_setup import get_llm
 
-def create_swarm(target_dir: str, provider: str, model: str):
-    llm_model = get_llm(provider, model)
+def create_swarm(target_dir: str, provider: str, queen_model: str, worker_model: str, drone_model: str):
+    llm_queen = get_llm(provider, queen_model)
+    llm_worker = get_llm(provider, worker_model)
+    llm_drone = get_llm(provider, drone_model)
+
     backend = SecureFilesystemBackend(root_dir=target_dir)
 
     worker = SubAgent(
         name="worker",
         role="Technical Writer subagent that reads source code and generates documentation.",
         system_prompt=WORKER_SYSTEM_PROMPT,
-        model=llm_model,
+        model=llm_worker,
         backend=backend
     )
 
@@ -22,13 +25,13 @@ def create_swarm(target_dir: str, provider: str, model: str):
         name="drone",
         role="Devil's Advocate / QA subagent that critiques documentation and validates requirements.",
         system_prompt=DRONE_SYSTEM_PROMPT,
-        model=llm_model,
+        model=llm_drone,
         backend=backend
     )
 
     queen = create_deep_agent(
         system_prompt=QUEEN_SYSTEM_PROMPT,
-        model=llm_model,
+        model=llm_queen,
         backend=backend,
         subagents=[worker, drone],
         tools=[check_file_freshness]

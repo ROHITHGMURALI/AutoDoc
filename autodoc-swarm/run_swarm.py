@@ -12,19 +12,28 @@ def run(
     target: str = typer.Option(".", help="Target repository path"),
     force_update: bool = typer.Option(False, help="Force update all documentation, ignoring freshness checks"),
     provider: str = typer.Option("openrouter", help="LLM Provider (openrouter, anthropic, openai, google)"),
-    model: str = typer.Option("anthropic/claude-3.5-sonnet", help="Model name (e.g., anthropic/claude-3.5-sonnet, gpt-4o)")
+    queen_model: str = typer.Option("anthropic/claude-3.5-sonnet", help="Model name for the Swarm Queen"),
+    worker_model: str = typer.Option("anthropic/claude-3.5-sonnet", help="Model name for the Swarm Worker"),
+    drone_model: str = typer.Option("anthropic/claude-3.5-sonnet", help="Model name for the Swarm Drone")
 ):
     """
     Run the AutoDoc Agent Swarm to generate documentation for a repository.
     """
     load_dotenv()
-    typer.echo(f"Starting Swarm Queen on {target} using {provider}:{model}")
+    typer.echo(f"Starting Swarm on {target} using provider: {provider}")
+    typer.echo(f"Queen Model: {queen_model} | Worker Model: {worker_model} | Drone Model: {drone_model}")
 
     if force_update:
         typer.echo("Warning: --force-update flag provided. Note: This feature is simulated as true via Queen prompt adjustments in future scopes. Standard run proceeding.")
 
     try:
-        queen = create_swarm(target_dir=target, provider=provider, model=model)
+        queen = create_swarm(
+            target_dir=target,
+            provider=provider,
+            queen_model=queen_model,
+            worker_model=worker_model,
+            drone_model=drone_model
+        )
 
         typer.echo("Executing deep scan and documentation planning...")
         # Start the run

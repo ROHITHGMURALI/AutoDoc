@@ -11,9 +11,21 @@ def test_swarm_initialization(mock_subagent, mock_create_deep_agent, mock_get_ll
     mock_get_llm.return_value = mock_llm
 
     # Just testing we can create the swarm and access tools without issues
-    queen = create_swarm(target_dir="./dummy_repo", provider="openai", model="gpt-4o")
+    queen = create_swarm(
+        target_dir="./dummy_repo",
+        provider="openai",
+        queen_model="gpt-4o",
+        worker_model="gpt-4o-mini",
+        drone_model="gpt-3.5-turbo"
+    )
 
-    mock_get_llm.assert_called_with("openai", "gpt-4o")
+    # Verify get_llm was called 3 times with the different models
+    import unittest.mock
+    mock_get_llm.assert_any_call("openai", "gpt-4o")
+    mock_get_llm.assert_any_call("openai", "gpt-4o-mini")
+    mock_get_llm.assert_any_call("openai", "gpt-3.5-turbo")
+    assert mock_get_llm.call_count == 3
+
     mock_create_deep_agent.assert_called_once()
     assert mock_subagent.call_count == 2
 

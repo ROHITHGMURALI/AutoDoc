@@ -14,6 +14,7 @@ The AutoDoc Agent Swarm minimizes boilerplate orchestration by leveraging the po
 
 - **Hierarchical Swarm Architecture**: Clear separation of concerns (Planning, Writing, Reviewing).
 - **Multi-Provider LLM Support**: Configure the swarm to use OpenRouter, Anthropic, Google, or OpenAI out-of-the-box.
+- **Per-Agent Model Configuration**: Assign distinct, optimized models for each agent (e.g. use a high-intelligence model for the Queen, and faster/cheaper models for the Worker and Drone).
 - **Secure Filesystem Backend**: Implements a strict `SecureFilesystemBackend` preventing the LLM from inadvertently accessing or leaking sensitive data (`.env`, `.pem`, secrets, `.git`, `node_modules`).
 - **Smart Incremental Updates**: Built-in freshness checks so the Swarm only documents files that have changed since the last run.
 - **Mirrored Output Directory**: Output documentation elegantly mirrors the exact directory structure of the source code.
@@ -85,10 +86,15 @@ uv run python run_swarm.py --target ./src
 
 ### Advanced Execution
 
-Specify a different LLM provider and model (e.g., GPT-4o via OpenAI):
+Specify a different LLM provider and assign specific models to the Queen, Worker, and Drone agents:
 
 ```bash
-uv run python run_swarm.py --target ./my_backend_service --provider openai --model gpt-4o
+uv run python run_swarm.py \
+    --target ./my_backend_service \
+    --provider openai \
+    --queen-model gpt-4o \
+    --worker-model gpt-4o-mini \
+    --drone-model gpt-4o-mini
 ```
 
 Force an update of all documentation, overriding the modification time freshness checks:
@@ -108,5 +114,5 @@ uv run pytest
 Tests include validations for:
 - The `SecureFilesystemBackend` successfully blocking access to `.env` files.
 - The `check_file_freshness` logic accurately assessing modification timestamps.
-- Successful initializations and arguments for the Queen and subagents.
+- Successful initializations and distinct LLM assignments for the Queen and subagents.
 - Documentation filesystem mirroring behavior.
