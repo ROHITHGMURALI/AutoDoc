@@ -47,29 +47,35 @@ class SecureFilesystemBackend(FilesystemBackend):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         super().write(path, content)
 
-    def ls_info(self, path: str = ".") -> str:
-        # Note: Depending on deepagents implementation we might need to filter the output of ls_info
-        # Instead, we'll try to intercept what we can or rely on standard ls output filtering
+    def ls_info(self, path: str = ".") -> List[dict]:
         try:
             result = super().ls_info(path)
-            # Basic naive filtering of ls output
-            lines = result.splitlines()
-            allowed_lines = []
-            for line in lines:
-                # Naive check if any blocked word is in the line.
-                # A more robust approach depends on the exact output format of ls_info.
+            allowed_items = []
+            for item in result:
+                item_path = item.get("path", "")
+
+                # Check if any part of the path is a blocked directory
+                path_parts = Path(item_path).parts
                 blocked = False
-                for b_dir in self.blocked_dirs:
-                    if b_dir in line:
+                for part in path_parts:
+                    if part in self.blocked_dirs:
                         blocked = True
                         break
+
+                if blocked:
+                    continue
+
+                # Check if filename matches blocked patterns
+                filename = Path(item_path).name
+                for pattern in self.blocked_patterns:
+                    if pattern.search(filename):
+                        blocked = True
+                        break
+
                 if not blocked:
-                    for pattern in self.blocked_patterns:
-                        if pattern.search(line):
-                            blocked = True
-                            break
-                if not blocked:
-                    allowed_lines.append(line)
-            return "\n".join(allowed_lines)
+                    allowed_items.append(item)
+            return allowed_items
         except Exception as e:
-            return f"Error reading directory: {e}"
+            # We return empty list on error to match the return type expected
+            print(f"Error reading directory: {e}")
+            return []

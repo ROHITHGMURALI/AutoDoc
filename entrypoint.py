@@ -34,6 +34,10 @@ def configure_git():
     subprocess.run(["git", "config", "--global", "user.name", "AutoDoc Swarm"], check=True)
     subprocess.run(["git", "config", "--global", "user.email", "autodoc-swarm@github.actions"], check=True)
 
+    workspace = os.environ.get("GITHUB_WORKSPACE")
+    if workspace:
+        subprocess.run(["git", "config", "--global", "--add", "safe.directory", workspace], check=True)
+
 def commit_and_push(target_dir):
     try:
         subprocess.run(["git", "add", os.path.join(target_dir, "documentation/")], check=True)
