@@ -110,7 +110,13 @@ def main():
         )
 
         response = queen.invoke({"messages": [("user", kickoff_msg)]})
-        final_output = response["messages"][-1].content if "messages" in response and response["messages"] else str(response)
+        try:
+            if isinstance(response, dict) and "messages" in response:
+                final_output = response["messages"][-1].content
+            else:
+                final_output = str(response)
+        except Exception:
+            final_output = str(response)
         print("--- Final Queen Output ---")
         print(final_output)
 
