@@ -15,18 +15,16 @@ def create_swarm(target_dir: str, provider: str, queen_model: str, worker_model:
 
     worker = SubAgent(
         name="worker",
-        role="Technical Writer subagent that reads source code and generates documentation.",
+        description="Technical Writer subagent that reads source code and generates documentation.",
         system_prompt=WORKER_SYSTEM_PROMPT,
         model=llm_worker,
-        backend=backend
     )
 
     drone = SubAgent(
         name="drone",
-        role="Devil's Advocate / QA subagent that critiques documentation and validates requirements.",
+        description="Devil's Advocate / QA subagent that critiques documentation and validates requirements.",
         system_prompt=DRONE_SYSTEM_PROMPT,
         model=llm_drone,
-        backend=backend
     )
 
     queen = create_deep_agent(

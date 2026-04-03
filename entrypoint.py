@@ -109,12 +109,13 @@ def main():
             drone_model=drone_model
         )
 
-        response = queen.run(kickoff_msg)
+        response = queen.invoke({"messages": [("user", kickoff_msg)]})
+        final_output = response["messages"][-1].content if "messages" in response and response["messages"] else str(response)
         print("--- Final Queen Output ---")
-        print(response)
+        print(final_output)
 
         # Write summary
-        write_step_summary(f"## AutoDoc Swarm Execution Complete 🐝\n\n**Models Used:**\n- Queen: `{queen_model}`\n- Worker: `{worker_model}`\n- Drone: `{drone_model}`\n\n**Queen Output:**\n```\n{response}\n```")
+        write_step_summary(f"## AutoDoc Swarm Execution Complete 🐝\n\n**Models Used:**\n- Queen: `{queen_model}`\n- Worker: `{worker_model}`\n- Drone: `{drone_model}`\n\n**Queen Output:**\n```\n{final_output}\n```")
 
         success = commit_and_push(target_dir)
         if success:
