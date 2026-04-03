@@ -8,11 +8,13 @@ from deepagents.backends import FilesystemBackend
 class SecureFilesystemBackend(FilesystemBackend):
     def __init__(self, root_dir: str = ".", virtual_mode: bool = False, *args, **kwargs):
         super().__init__(root_dir=root_dir, virtual_mode=virtual_mode, *args, **kwargs)
+        self._root_dir = root_dir
         self.blocked_patterns = [
             re.compile(r'\.env.*'),
             re.compile(r'.*\.pem$'),
             re.compile(r'.*credentials.*', re.IGNORECASE),
             re.compile(r'.*secret.*', re.IGNORECASE),
+            re.compile(r'.*ignore$', re.IGNORECASE),  # .gitignore, .dockerignore, .npmignore, etc.
         ]
         self.blocked_dirs = {
             ".git",
@@ -21,6 +23,26 @@ class SecureFilesystemBackend(FilesystemBackend):
             ".venv",
             "__pycache__"
         }
+
+    def _normalize_path(self, path_str: str) -> str:
+        """
+        LLMs sometimes pass paths with the root_dir prefix or a leading slash.
+        Normalize to a plain relative path before security checks and backend calls.
+        e.g. "/dummy_repo/src/api.py" -> "src/api.py" when root_dir="./dummy_repo"
+        """
+        path = Path(path_str)
+
+        # Strip leading slash to convert absolute -> relative
+        if path.is_absolute():
+            path = Path(*path.parts[1:])
+
+        # Strip root_dir prefix if LLM redundantly included it
+        root_parts = [p for p in Path(self._root_dir).parts if p != "."]
+        if path.parts[:len(root_parts)] == tuple(root_parts):
+            remaining = path.parts[len(root_parts):]
+            path = Path(*remaining) if remaining else Path(".")
+
+        return str(path)
 
     def _is_allowed(self, path_str: str) -> bool:
         path = Path(path_str)
@@ -48,16 +70,19 @@ class SecureFilesystemBackend(FilesystemBackend):
         return True
 
     def read(self, path: str, *args, **kwargs) -> str:
+        path = self._normalize_path(path)
         if not self._is_allowed(path):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         return super().read(path, *args, **kwargs)
 
     def write(self, path: str, content: str) -> Any:
+        path = self._normalize_path(path)
         if not self._is_allowed(path):
             raise PermissionError(f"Access to {path} is denied for security reasons.")
         return super().write(path, content)
 
     def ls_info(self, path: str = ".") -> list[dict]:
+        path = self._normalize_path(path)
         try:
             result = super().ls_info(path)
             allowed_items = []
