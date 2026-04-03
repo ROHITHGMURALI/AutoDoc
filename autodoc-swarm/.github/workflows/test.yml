@@ -1,0 +1,28 @@
+name: "Test AutoDoc Agent Swarm"
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-autodoc-swarm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for smart diffing to work
+
+      - name: Run AutoDoc Swarm
+        uses: ./
+        with:
+          github_token: ${{ secrets.PAT_TOKEN }}
+          provider: 'openrouter'
+          queen_model: 'qwen/qwen3.6-plus:free'
+          worker_model: 'qwen/qwen3.6-plus:free'
+          drone_model: 'qwen/qwen3.6-plus:free'
+          api_key: ${{ secrets.OPENAI_API_KEY }}
+          target_dir: './dummy_repo'

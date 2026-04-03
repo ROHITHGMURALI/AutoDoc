@@ -1,0 +1,38 @@
+name: 'AutoDoc Agent Swarm'
+description: 'Autonomous documentation generation using DeepAgents Swarm architecture'
+author: 'AutoDoc Swarm'
+
+inputs:
+  github_token:
+    description: 'GitHub token for committing documentation back to the repository'
+    required: true
+  provider:
+    description: 'LLM Provider (openrouter, anthropic, openai, google)'
+    required: true
+    default: 'openrouter'
+  queen_model:
+    description: 'Model for Swarm Queen'
+    required: true
+    default: 'anthropic/claude-3.5-sonnet'
+  worker_model:
+    description: 'Model for Swarm Worker'
+    required: true
+    default: 'anthropic/claude-3.5-sonnet'
+  drone_model:
+    description: 'Model for Swarm Drone'
+    required: true
+    default: 'anthropic/claude-3.5-sonnet'
+  target_dir:
+    description: 'Target directory to scan'
+    required: true
+    default: '.'
+  api_key:
+    description: 'API Key for the chosen provider (e.g. OPENROUTER_API_KEY)'
+    required: true
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    API_KEY: ${{ inputs.api_key }}
+    GITHUB_TOKEN: ${{ inputs.github_token }}
