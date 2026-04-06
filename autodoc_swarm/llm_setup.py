@@ -1,5 +1,10 @@
 import os
 from langchain_core.language_models.chat_models import BaseChatModel
+from .rate_limiter import MinuteRateLimiter
+
+# Shared limiter for OpenRouter only — all three agents draw from the same
+# 49 req/min budget so the combined swarm never exceeds OpenRouter's cap.
+_openrouter_rate_limiter = MinuteRateLimiter(max_requests=49, window_seconds=60)
 
 def get_llm(provider: str, model: str) -> BaseChatModel:
     """
@@ -16,7 +21,8 @@ def get_llm(provider: str, model: str) -> BaseChatModel:
         return ChatOpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
-            model=model
+            model=model,
+            rate_limiter=_openrouter_rate_limiter,
         )
 
     elif provider == "anthropic":
@@ -26,7 +32,7 @@ def get_llm(provider: str, model: str) -> BaseChatModel:
             raise ValueError("ANTHROPIC_API_KEY environment variable not set.")
         return ChatAnthropic(
             api_key=api_key,
-            model_name=model
+            model_name=model,
         )
 
     elif provider == "openai":
@@ -36,7 +42,7 @@ def get_llm(provider: str, model: str) -> BaseChatModel:
             raise ValueError("OPENAI_API_KEY environment variable not set.")
         return ChatOpenAI(
             api_key=api_key,
-            model=model
+            model=model,
         )
 
     elif provider == "google":
@@ -46,7 +52,7 @@ def get_llm(provider: str, model: str) -> BaseChatModel:
             raise ValueError("GOOGLE_API_KEY environment variable not set.")
         return ChatGoogleGenerativeAI(
             google_api_key=api_key,
-            model=model
+            model=model,
         )
 
     else:

@@ -1,9 +1,9 @@
 name: "Test AutoDoc Agent Swarm"
 on:
-  push:
+  pull_request:
+    types: [opened, edited, reopened]
     branches:
       - main
-  pull_request:
 
 jobs:
   test-autodoc-swarm:
@@ -21,8 +21,8 @@ jobs:
         with:
           github_token: ${{ secrets.PAT_TOKEN }}
           provider: 'openrouter'
-          queen_model: 'qwen/qwen3.6-plus:free'
-          worker_model: 'qwen/qwen3.6-plus:free'
-          drone_model: 'qwen/qwen3.6-plus:free'
+          queen_model: 'stepfun/step-3.5-flash:free'
+          worker_model: 'stepfun/step-3.5-flash:free'
+          drone_model: 'stepfun/step-3.5-flash:free'
           api_key: ${{ secrets.OPENAI_API_KEY }}
           target_dir: './'
